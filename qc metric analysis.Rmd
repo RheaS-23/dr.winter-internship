@@ -1,0 +1,73 @@
+---
+title: "qc metric analysis"
+author: "rhea shah"
+date: "2023-07-11"
+output: html_document
+---
+
+```{r}
+
+install.packages("ggplot2")
+
+library(dplyr)
+library(Seurat)
+library(patchwork)
+library(hdf5r)
+library(ggplot2)
+library(magrittr)
+
+# loading the data 
+hce048_obj <- Read10X_h5(filename = "~/2023 sir/single cell analysis/hce048_distal_filteredfeaturematrix.h5")
+
+# creating the seurat object 
+hce048_obj <- CreateSeuratObject(counts = hce048_obj)
+
+# need to create additonal metrics to plot other distributions 
+
+# adding number of genes per umi for each cell to the metadata 
+hce048_obj$log10GenesPerUmi <- log10(hce048_obj$nFeature_RNA) / log10(hce048_obj$nCount_RNA)
+
+# adding the percent.mt RATIO (why we divide by 100)
+hce048_obj$mitoRatio <- PercentageFeatureSet(object = hce048_obj, pattern = "^MT-")
+hce048_obj$mitoRatio <- hce048_obj@meta.data$mitoRatio / 100 
+
+# creating the meta data dataframe 
+metadata <- hce048_obj@meta.data
+
+# adding cell ids to the metadata
+metadata$cells <- rownames(metadata)
+
+# renaming some of the columns 
+metadata <- metadata %>%
+  dplyr::rename(seq_folder = orig.ident,
+               nUMI = nCount_RNA, 
+               nGene = nFeature_RNA)
+
+# creating another collumn to group the cells together to make it easier to visualize
+metadata$sample <- "cell"
+
+# adding the metadata back into the seurat object 
+hce048_obj@meta.data <- metadata
+
+# viusalizing the number of cell counts 
+metadata %>% 
+  	ggplot(aes(x = sample)) + 
+  	geom_bar() +
+  	theme_classic() +
+  	theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
+  	theme(plot.title = element_text(hjust=0.5, face="bold")) +
+  	ggtitle("NCells")
+
+# visualizing umi's per cell 
+metadata %>% 
+  	ggplot(aes(color=sample, x=nUMI, fill= sample)) + 
+  	geom_density(alpha = 0.2) + 
+  	scale_x_log10() + 
+  	theme_classic() +
+  	ylab("Cell density") +
+  	geom_vline(xintercept = 500)
+
+
+
+
+```
