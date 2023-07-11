@@ -73,6 +73,43 @@ metadata %>%
 
 # ================= himani - absolute value =================
 
+library(dplyr)
+library(Seurat)
+library(patchwork)
+library(hdf5r)
+
+# Load the data
+obj.data <- Read10X_h5("C:/Users/Himani/Downloads/matrix.h5")
+
+# Create the seurat object
+seurat_obj <- CreateSeuratObject(counts = obj.data, min.cells = 3, min.features = 200)
+
+# visualizing the object before the QC strategy using a Vln Plot
+seurat_obj[["percent.mt"]] <- PercentageFeatureSet(seurat_obj, pattern = "^MT-")
+VlnPlot(seurat_obj, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), pt.size = 0.01, ncol = 3)
+
+# Scatterplot of total counts vs. number of expressed genes
+FeatureScatter(seurat_obj, feature1 = "nCount_RNA", feature2 = "nFeature_RNA")
+
+#using absolute value QC strategy (identifying & removing low-quality cells)
+
+# Define cutoff values
+count_cutoff <- 4000
+gene_cutoff <- 3000
+
+# Filter cells based on cutoffs
+seurat_obj <- subset(seurat_obj, subset = nCount_RNA > count_cutoff)
+
+# Filter cells by gene
+seurat_obj <- subset(seurat_obj, subset = nFeature_RNA > gene_cutoff)
+
+#updating the seurat object
+updated_seurat <- UpdateSeuratObject(seurat_obj)
+
+#visualizing it after the changes
+seurat_obj[["percent.mt"]] <- PercentageFeatureSet(seurat_obj, pattern = "^MT-")
+VlnPlot(seurat_obj, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), pt.size = 0.01, ncol = 3)
+
 # ================= anjali - percentile =================  
 
 
