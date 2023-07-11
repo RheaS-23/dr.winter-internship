@@ -16,6 +16,8 @@ library(hdf5r)
 library(ggplot2)
 library(magrittr)
 
+# ================= rhea - eyeballing based on distribution ================= 
+
 # loading the data 
 hce048_obj <- Read10X_h5(filename = "~/2023 sir/single cell analysis/hce048_distal_filteredfeaturematrix.h5")
 
@@ -67,6 +69,11 @@ metadata %>%
   	ylab("Cell density") +
   	geom_vline(xintercept = 500)
 
+# ================= ankitha - relative to median =================
+
+# ================= himani - absolute value =================
+
+# ================= anjali - percentile =================  
 
 
 
