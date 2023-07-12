@@ -70,6 +70,74 @@ metadata %>%
   	geom_vline(xintercept = 500)
 
 # ================= ankitha - relative to median =================
+library(dplyr)
+library(Seurat)
+library(SeuratObject)
+library(patchwork)
+library(ggplot2)
+
+HCD.data <- Read10X("/Users/ankithachalla/Desktop/RStudio/SingleCellProject/OneDrive_2_7-10-2023/HCE048-D_MP_cellranger6_01182023/outs/filtered_feature_bc_matrix/")
+HCD <- CreateSeuratObject(counts = HCD.data, project = "HCE048-D")
+
+HCP.data <- Read10X("/Users/ankithachalla/Desktop/RStudio/SingleCellProject/OneDrive_2_7-10-2023/HCE048-P_MP_cellranger6_01182023/outs/filtered_feature_bc_matrix/")
+HCP <- CreateSeuratObject(counts = HCP.data, project = "HCE048-P")
+
+IWD.data <- Read10X("/Users/ankithachalla/Desktop/RStudio/SingleCellProject/OneDrive_1_7-10-2023/IW0076-D_MP_cellranger6_01182023/outs/filtered_feature_bc_matrix/")
+IWD <- CreateSeuratObject(counts = IWD.data, project = "IW0076-D")
+
+IWP.data <- Read10X("/Users/ankithachalla/Desktop/RStudio/SingleCellProject/OneDrive_1_7-10-2023/IW0076-P_MP_cellranger6_01182023/outs/filtered_feature_bc_matrix/")
+IWP <- CreateSeuratObject(counts = IWP.data, project = "IW0076-P")
+
+PWD.data <- Read10X("/Users/ankithachalla/Desktop/RStudio/SingleCellProject/P0630-D filtered_feature_bc_matrix/")
+PWD <- CreateSeuratObject(counts = PWD.data, project = "P0630-D")
+
+#PWP.data <- Read10X("/Users/ankithachalla/Desktop/RStudio/SingleCellProject/P0630-Pfiltered_feature_bc_matrix/")
+#PWP <- CreateSeuratObject(counts = HCD.data, project = "P0630-D")
+
+samples <- list(HCD, HCP, IWD, IWP, PWD)
+
+for (i in seq_along(samples)) {
+  obj <- samples[[i]]
+  
+  # Calculating percentage of mitochondrial genes per cell
+  obj[["percent.mt"]] <- PercentageFeatureSet(obj, pattern = "^MT-")
+  
+  # Calculating percentage of ribosomal genes per cell
+  obj[["percent.rb"]] <- PercentageFeatureSet(obj, pattern = "^RP[SL]")
+  
+  # Calculating median value of each metric
+  count_med <- median(obj@meta.data$nCount_RNA)
+  feature_med <- median(obj@meta.data$nFeature_RNA)
+  pct_mt_med <- median(obj@meta.data$percent.mt)
+  pct_rb_med <- median(obj@meta.data$percent.rb)
+  
+  
+  # Calculates absolute deviation (subtract median from each value)
+  nCt_abs_dev <- abs(obj@meta.data$nCount_RNA - count_med)
+  nFt_abs_dev <- abs(obj@meta.data$nFeature_RNA - feature_med)
+  mt_abs_dev <- abs(obj@meta.data$percent.mt - pct_mt_med)
+  rb_abs_dev <- abs(obj@meta.data$percent.rb - pct_rb_med)
+  
+  
+  # Calculates the median absolute deviation
+  nCt_mad <- mad(nCt_abs_dev, constant = 1)
+  nFt_mad <- mad(nFt_abs_dev, feature_med)
+  mt_mad <- mad(mt_abs_dev, pct_mt_med)
+  rb_mad <- mad(rb_abs_dev, pct_rb_med)
+  
+  # Filtering Cells if they fall within the range
+  obj@meta.data[["nCount_Cutoff"]] <- ifelse(obj@meta.data$nCount_RNA >= (count_med - (3*nCt_mad)) & obj@meta.data$nCount_RNA <= (count_med + (3*nCt_mad)), TRUE, FALSE)
+  obj@meta.data[["nFeature_Cutoff"]] <- ifelse(obj@meta.data$nFeature_RNA >= (feature_med - (3*nFt_mad)) & obj@meta.data$nFeature_RNA <= (feature_med + (3*nFt_mad)), TRUE, FALSE)
+  obj@meta.data[["percent.mt_Cutoff"]] <- ifelse(obj@meta.data$percent.mt >= (pct_mt_med - (3*mt_mad)) & obj@meta.data$percent.mt <= (pct_mt_med + (3*mt_mad)), TRUE, FALSE)
+  obj@meta.data[["percent.rb_Cutoff"]] <- ifelse(obj@meta.data$percent.rb >= (pct_rb_med - (3*rb_mad)) & obj@meta.data$percent.rb <= (pct_rb_med + (3*rb_mad)), TRUE, FALSE)
+  
+  # Subsetting the cells
+  obj <- subset(obj, nCount_Cutoff == TRUE & nFeature_Cutoff == TRUE & percent.mt_Cutoff == TRUE & percent.rb_Cutoff == TRUE)
+
+  samples[[i]] <- obj
+
+}
+
 
 # ================= himani - absolute value =================
 
