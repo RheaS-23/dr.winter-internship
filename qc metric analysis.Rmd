@@ -15,13 +15,19 @@ library(ggplot2)
 library(magrittr)
 
 # ================= rhea - eyeballing based on distribution =================
+# loading in the libraries
+library(dplyr)
+library(Seurat)
+library(patchwork)
+library(hdf5r)
+library(magrittr)
 
 # ----------------------- loading in the data -----------------------
 # loading the data
-hce048_obj <- Read10X_h5(filename = "~/2023 sir/single cell analysis/hce048_distal_filteredfeaturematrix.h5")
+hce048_distal_obj <- Read10X_h5(filename = "~/2023 sir/single cell analysis/hce048_distal_filteredfeaturematrix.h5")
 
 # creating the seurat object
-hce048_obj <- CreateSeuratObject(counts = hce048_obj)
+hce048_distal_obj <- CreateSeuratObject(counts = hce048_distal_obj)
 
 # importing the hce048 proximal data
 hce048_proximal_obj <- Read10X_h5(filename = "~/2023 sir/single cell analysis/hce048_proximal_filteredfeaturematrix.h5")
@@ -53,129 +59,54 @@ p0630_proximal_obj <- Read10X_h5(filename = "~/2023 sir/single cell analysis/p06
 # creating the seurat object
 p0630_proximal_obj <- CreateSeuratObject(counts = p0630_proximal_obj)
 
+# adding in the percent mt 
+p0630_proximal_obj[["percent.mt"]] <- PercentageFeatureSet(p0630_proximal_obj, pattern = "^MT")
+
+# creating a vln plot 
+VlnPlot(p0630_proximal_obj, features = c("nCount_RNA", "nFeature_RNA", "percent.mt"), pt.size = 0)
+
+
+hce048_distal_obj$cell <- "hce048_distal"
+
+# trying to merge all the objects
+prefiltered_data <- merge(hce048_distal_obj, hce048_proximal_obj, iw0076_distal_obj, iw0076_proximal_obj,p0630_distal_obj, p0630_proximal_obj, add.cell.ids = cell)
 
 # ------------------------- FOR LOOP ----------------------------------------
 
-sample_list <- list(hce048_obj, hce048_proximal_obj, iw0076_distal_obj, iw0076_proximal_obj, p0630_distal_obj, p0630_proximal_obj)  
+sample_list <- list(hce048_distal_obj, hce048_proximal_obj, iw0076_distal_obj, iw0076_proximal_obj, p0630_distal_obj, p0630_proximal_obj)
 
 for (object in sample_list) {
-   # adding number of genes per umi for each cell to the metadata
-   object$log10GenesPerUmi <- log10(object$nFeature_RNA + 1) / log10(object$nCount_RNA + 1)  # Adding 1 to avoid division by zero
-   
-   # adding the percent.mt RATIO (why we divide by 100)
-   object$mitoRatio <- PercentageFeatureSet(object = object, pattern = "^MT-")
-   object$mitoRatio <- object$mitoRatio / 100  # Access the mitoRatio column directly
-   
-   # creating the meta data dataframe
-   metadata <- object@meta.data  # Access the meta.data slot of the object
-   
-   # adding cell ids to the metadata
-   metadata$cells <- rownames(metadata)
-   
-   # renaming some of the columns
-   metadata <- metadata %>%
-     rename(seq_folder = orig.ident,
-            nUMI = nCount_RNA,
-            nGene = nFeature_RNA)
-   
-   # creating another column to group the cells together to make it easier to visualize
-   metadata$sample <- "cell"
-   
-   # adding the metadata back into the seurat object
-   object@meta.data <- metadata
-   
-   # visualizing the number of cell counts
-   cell_counts <- metadata %>%
-     ggplot(aes(x = sample)) +
-     geom_bar() +
-     theme_classic() +
-     theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
-     theme(plot.title = element_text(hjust=0.5, face="bold")) +
-     ggtitle("nCells")
-   
-   # visualizing umi's per cell
-   umi_per_cell <- metadata %>%
-     ggplot(aes(color=sample, x=nUMI, fill= sample)) +
-     geom_density(alpha = 0.2) +
-     scale_x_log10() +
-     theme_classic() +
-     ylab("Cell density") +
-     geom_vline(xintercept = 50)
-   
-   # Visualize the distribution of genes detected per cell via histogram
-   genes_per_cell_hist <- metadata %>%
-     ggplot(aes(color=sample, x=nGene, fill= sample)) +
-     geom_density(alpha = 0.2) +
-     theme_classic() +
-     scale_x_log10() +
-     geom_vline(xintercept = 300)
-   
-   # Visualize the distribution of genes detected per cell via boxplot
-   genes_per_cell_box <- metadata %>%
-     ggplot(aes(x=sample, y=log10(nGene), fill=sample)) +
-     geom_boxplot() +
-     theme_classic() +
-     theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
-     theme(plot.title = element_text(hjust=0.5, face="bold")) +
-     ggtitle("NCells vs NGenes")
-   
-   # Visualize the correlation between genes detected and number of UMIs and determine whether strong presence of cells with low numbers of genes/UMIs
-   gene_and_umi <- metadata %>%
-     ggplot(aes(x=nUMI, y=nGene, color=mitoRatio)) +
-     geom_point() +
-     scale_colour_gradient(low = "gray90", high = "black") +
-     stat_smooth(method=lm) +
-     scale_x_log10() +
-     scale_y_log10() +
-     theme_classic() +
-     geom_vline(xintercept = 500) +
-     geom_hline(yintercept = 250) +
-     facet_wrap(~sample)
-   
-   # Visualize the distribution of mitochondrial gene expression detected per cell
-   mito_expression <- metadata %>%
-     ggplot(aes(color=sample, x=mitoRatio, fill=sample)) +
-     geom_density(alpha = 0.2) +
-     scale_x_log10() +
-     theme_classic() +
-     geom_vline(xintercept = 0.2)
-   
-   # Visualize the overall complexity of the gene expression by visualizing the genes detected per UMI
-   gene_per_umi <- metadata %>%
-     ggplot(aes(x=log10GenesPerUmi, color = sample, fill=sample)) +
-     geom_density(alpha = 0.2) +
-     theme_classic() +
-     geom_vline(xintercept = 0.8)
-   
-   #outputting the various graphs
-   print(cell_counts)
-   print(gene_per_umi)
-   print(umi_per_cell)
-   print(mito_expression)
-   print(gene_and_umi)
-   print(genes_per_cell_box)
-   print(genes_per_cell_hist)
+  
+  # creating the percent.mt 
+  object[["percent.mt"]] <- PercentageFeatureSet(object, pattern = "^MT-")
+  
+  # creating the violin plots 
+  violin_plot <- VlnPlot(object, features = c("nCount_RNA", "nFeature_RNA", "percent.mt"), pt.size = 0)
+  
+  # printing the violin plot 
+  print(violin_plot)
+  
 }
 
-# --------------------------- creating the subsets ------------------------------
+# ------------------------- creating the subsets  ----------------------------------------
 
-# creating a subset of the hce048 distal data
-filtered_hce048sample <- subset(hce048_obj@meta.data, subset = (nGene >= 250) & (mitoRatio < 0.2) & (log10GenesPerUmi > 0.75) & (nUMI > 750))
+# filtered hce048 distal sample 
+filtered_hce048_distal_sample <- subset(hce048_distal_obj, subset = (percent.mt > 3) & (nFeature_RNA > 1100) & (nCount_RNA > 1000))
 
-# creating a subset of hce048 proximal data 
-filtered_hce048proximalsample <- subset(hce048_proximal_obj, subset = (nUMI > 750) & (nGene >= 500) & (mitoRatio < 0.2) & (log10GenesPerUmi > 0.7))
+# filtered hce048 proximal sample
+filtered_hce048_proximal_sample <- subset(hce048_proximal_obj, subset = (percent.mt > 5) & (nCount_RNA > 1000) & (nFeature_RNA > 1250))
 
-# subset for the iw0076 distal data 
-filtered_iw0076distalsample <- subset(iw0076_distal_obj, subset = (nUMI > 500) & (nGene >= 750) & (mitoRatio < 0.2) & (log10GenesPerUmi > 0.7))
+# filtered iw0076 distal sample 
+filtered_iw0076_distal_sample <- subset(iw0076_distal_obj, subset = (nFeature_RNA > 600) & (nCount_RNA > 1000) & (percent.mt > 4) & (percent.mt <= 25))
 
-# subset for the iw0076 proximal data 
-filtered_iw0076proximalsample <- subset(iw0076_proximal_obj, subset = (nUMI > 500) & (nGene >= 500) & (mitoRatio < 0.2) & (log10GenesPerUmi > 0.7))
+# filtered iw0076 proximal sample 
+filtered_iw0076_proximal_sample <- subset(iw0076_proximal_obj, subset = (nCount_RNA > 11000) & (nFeature_RNA > 1000) & (percent.mt > 4) & (percent.mt < 25))
 
-# subset for p0630 distal data
-filtered_p0630distalsample <- subset(p0630_distal_obj, subset = (nUMI > 500) & (nGene >= 500) & (mitoRatio < 0.2) & (log10GenesPerUmi > 0.7))
+# filtered p0630 distal sample 
+filtered_p0630_distal_sample <- subset(p0630_distal_obj, subset = (nCount_RNA > 10000) & (nFeature_RNA > 1000) & (percent.mt < 22) & (percent.mt > 2))
 
-# subset for p0630 proximal data 
-filtered_p0630proximalsample <- subset(p0630_proximal_obj, subset = (nUMI > 750) & (nGene >= 300) & (mitoRatio < 0.2) & (log10GenesPerUmi > 0.75))
+# filtered p0630 proximal sample 
+filtered_p0630_proximal_sample <- subset(p0630_proximal_obj, subset = (nCount_RNA > 10000) & (nFeature_RNA > 500) & (percent.mt > 3) & (percent.mt < 35))
 
 
 # ================= ankitha - relative to median =================
