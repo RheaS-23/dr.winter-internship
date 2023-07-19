@@ -11,7 +11,36 @@ output: html_document
 library(Seurat)
 library(magrittr)
 
-# ================= rhea =================
+# ================= rhea - healthy control proximal =================
+
+#loading in the object
+hcp <- readRDS(file = "~/2023 sir/single cell analysis/HCP1.rds")
+
+# normalizing the data
+hcp <- NormalizeData(hcp)
+
+#finding different variable genes
+hcp1 <- FindVariableFeatures(hcp, selection.method = "vst", nfeatures = 500)
+hcp2 <- FindVariableFeatures(hcp, selection.method = "vst", nfeatures = 1000)
+hcp3 <- FindVariableFeatures(hcp, selection.method = "vst", nfeatures = 2000)
+
+# feature plots
+VariableFeaturePlot(hcp1) + VariableFeaturePlot (hcp2) + VariableFeaturePlot(hcp3)
+
+# scaling the data
+hcp1 <- ScaleData(hcp1)
+hcp2 <- ScaleData(hcp2)
+hcp3 <- ScaleData(hcp3)
+
+# running pca
+hcp1 <- RunPCA(hcp1, features = VariableFeatures(object = hcp1))
+hcp2 <- RunPCA(hcp2, features = VariableFeatures(object = hcp2))
+hcp3 <- RunPCA(hcp3, features = VariableFeatures(object = hcp3))
+
+# creating the elbow plots
+ElbowPlot(hcp1) + ElbowPlot(hcp2) + ElbowPlot(hcp3)
+
+
 
 # ================= ankitha =================
 
