@@ -1,0 +1,22 @@
+---
+title: "Dimension Reduction and Clustering Exploration"
+author: "rhea shah"
+date: "2023-07-19"
+output: html_document
+---
+
+```{r}
+
+# loading in the libraries
+library(Seurat)
+library(magrittr)
+
+# ================= rhea =================
+
+# ================= ankitha =================
+
+# ================= himani =================
+
+# ================= anjali =================
+
+```
