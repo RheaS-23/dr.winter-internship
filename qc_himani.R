@@ -37,14 +37,18 @@ P0P[["percent.mt"]] <- PercentageFeatureSet(P0P, pattern = "^MT-")
 
 #merging the data & creating the violin plot
 merged <- merge(HCD, y = c(HCP, IWD, IWP, P0D, P0P), add.cell.ids = c("HCD", "HCP", "IWD","IWP", "P0D", "P0P"))
-VlnPlot(merged, features = c("nCount_RNA", "nFeature_RNA", "percent.mt"), pt.size = 0)
-
+cells<- VlnPlot(merged, features = "nCount_RNA", pt.size = 0, group.by = "orig.ident")
+genes <- VlnPlot(merged, features = "nFeature_RNA", pt.size = 0, group.by = "orig.ident")
+pmt <- VlnPlot(merged, features = "percent.mt", pt.size = 0, group.by = "orig.ident")
+cells + geom_hline(aes(yintercept = 3800), color = "black")
+genes + geom_hline(aes(yintercept = 1100), color = "black")
+pmt + geom_hline(aes(yintercept = 2), color = "black")+geom_hline(aes(yintercept = 20), color = "black")
 
 #using absolute value QC strategy (identifying & removing low-quality cells)
 
 # Define cutoff values
 
-count_cutoff <- 1800
+count_cutoff <- 3800
 gene_cutoff <- 1100
 percent_cutoff <- 2
 percent_upper_cutoff <- 20
@@ -99,8 +103,10 @@ P0P[["percent.mt"]] <- PercentageFeatureSet(P0P, pattern = "^MT-")
 
 #merging the data & creating the violin plot
 merged <- merge(HCD, y = c(HCP, IWD, IWP, P0D, P0P), add.cell.ids = c("HCD", "HCP", "IWD","IWP", "P0D", "P0P"))
-merged <- na.omit(merged)
-hline_data <- data.frame(feature = c("nCount_RNA", "nFeature_RNA", "percent.mt"), yintercept = c(1800, 1100, 2))
-p <- VlnPlot(merged, features = c("nCount_RNA", "nFeature_RNA", "percent.mt"), pt.size = 0, group.by = "orig.ident") 
-p + geom_hline(data = hline_data, aes(yintercept = yintercept), color = "black", linetype = "dashed")
-head(hline_data)
+cells<- VlnPlot(merged, features = "nCount_RNA", pt.size = 0, group.by = "orig.ident")
+genes <- VlnPlot(merged, features = "nFeature_RNA", pt.size = 0, group.by = "orig.ident")
+pmt <- VlnPlot(merged, features = "percent.mt", pt.size = 0, group.by = "orig.ident")
+cells + geom_hline(aes(yintercept = 3800), color = "black")
+genes + geom_hline(aes(yintercept = 1100), color = "black")
+pmt + geom_hline(aes(yintercept = 2), color = "black")+geom_hline(aes(yintercept = 20), color = "black")
+
