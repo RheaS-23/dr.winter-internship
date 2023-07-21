@@ -14,15 +14,40 @@ library(magrittr)
 # ================= rhea - healthy control proximal =================
 
 #loading in the object
-hcp <- readRDS(file = "~/2023 sir/single cell analysis/HCP1.rds")
+hcp <- readRDS(file = "~/2023 sir/single cell analysis/HCP_postQC.rds")
 
 # normalizing the data
 hcp <- NormalizeData(hcp)
 
 #finding different variable genes
+
+# 500 variable genes 
 hcp1 <- FindVariableFeatures(hcp, selection.method = "vst", nfeatures = 500)
+hcp1_top10 <- head(VariableFeatures(hcp1), 10)
+plot1 <- VariableFeaturePlot(hcp1)
+plot2 <- LabelPoints(plot = plot1, points = hcp1_top10, repel = TRUE)
+
+# 1000 variable genes 
 hcp2 <- FindVariableFeatures(hcp, selection.method = "vst", nfeatures = 1000)
+# gathering the top 10 
+top10 <- head(VariableFeatures(hcp2), 10)
+# creating the plots
+plot3 <- VariableFeaturePlot(hcp2)
+plot4 <- LabelPoints(plot = plot3, points = top10, repel = TRUE)
+
+
+# 2000 variable genes 
 hcp3 <- FindVariableFeatures(hcp, selection.method = "vst", nfeatures = 2000)
+# gathering top 10
+hcp3_top10 <- head(VariableFeatures(hcp3), 10)
+# creating plots
+plot5 <- VariableFeaturePlot(hcp3)
+plot6 <- LabelPoints(plot = plot5, points = hcp3_top10, repel = TRUE)
+
+# plotting the graphs 
+plot2 
+plot4
+plot6
 
 # feature plots
 VariableFeaturePlot(hcp1) + VariableFeaturePlot (hcp2) + VariableFeaturePlot(hcp3)
@@ -40,6 +65,148 @@ hcp3 <- RunPCA(hcp3, features = VariableFeatures(object = hcp3))
 # creating the elbow plots
 ElbowPlot(hcp1) + ElbowPlot(hcp2) + ElbowPlot(hcp3)
 
+umap_dims <- function(obj, dim.list) {
+  umaps <- mapply(FUN = RunUMAP, dims = 1:dim.list, MoreArgs = list(object = obj))
+  mapply(FUN = DimPlot, object = umaps, MoreArgs = list(reduction = "umap"), SIMPLIFY = FALSE)
+}
+
+# creates the 36 umaps
+
+dim.list <- list(1:17, 1:18, 1:19, 1:20)
+
+umap.and.dimplot <- function(object, dims) {
+  object <- RunUMAP(object, dims = dims)
+  plot <- DimPlot(object, reduction = "umap")
+  return(plot)
+}
+
+mapply(FUN = umap.and.dimplot, dims = dim.list, MoreArgs = list(object = hcp1), SIMPLIFY = FALSE)
+
+
+
+# pca plots w/ dims 1:2
+(VizDimLoadings(hcp1, dims = 1:2, reduction = "pca")) +
+(VizDimLoadings(hcp2, dims = 1:2, reduction = "pca")) +
+(VizDimLoadings(hcp3, dims = 1:2, reduction = "pca"))
+
+(DimHeatmap(hcp1, dims = 1:2, balanced = TRUE, cells = 500)) +
+(DimHeatmap(hcp2, dims = 1:2, balanced = TRUE, cells = 500)) +
+(DimHeatmap(hcp3, dims = 1:2, balanced = TRUE, cells = 500))
+
+# pca plots w/ dims 3:4
+(VizDimLoadings(hcp1, dims = 3:4, reduction = "pca")) +
+(VizDimLoadings(hcp2, dims = 3:4, reduction = "pca")) +
+(VizDimLoadings(hcp3, dims = 3:4, reduction = "pca"))
+
+(DimHeatmap(hcp1, dims = 3:4, balanced = TRUE, cells = 500)) +
+(DimHeatmap(hcp2, dims = 3:4, balanced = TRUE, cells = 500)) +
+(DimHeatmap(hcp3, dims = 3:4, balanced = TRUE, cells = 500))
+
+# pca plots w/ dims 5:6
+(VizDimLoadings(hcp1, dims = 5:6, reduction = "pca")) +
+(VizDimLoadings(hcp2, dims = 5:6, reduction = "pca")) +
+(VizDimLoadings(hcp3, dims = 5:6, reduction = "pca"))
+
+(DimHeatmap(hcp1, dims = 5:6, balanced = TRUE, cells = 500)) +
+(DimHeatmap(hcp2, dims = 5:6, balanced = TRUE, cells = 500)) +
+(DimHeatmap(hcp3, dims = 5:6, balanced = TRUE, cells = 500))
+
+# pca plots w/ dims 7:8
+(VizDimLoadings(hcp1, dims = 7:8, reduction = "pca")) +
+(VizDimLoadings(hcp2, dims = 7:8, reduction = "pca")) +
+(VizDimLoadings(hcp3, dims = 7:8, reduction = "pca"))
+
+(DimHeatmap(hcp1, dims = 7:8, balanced = TRUE, cells = 500)) +
+(DimHeatmap(hcp2, dims = 7:8, balanced = TRUE, cells = 500)) +
+(DimHeatmap(hcp3, dims = 7:8, balanced = TRUE, cells = 500))
+
+# pca plots w/ dims 9:10
+(VizDimLoadings(hcp1, dims = 9:10, reduction = "pca")) +
+(VizDimLoadings(hcp2, dims = 9:10, reduction = "pca")) +
+(VizDimLoadings(hcp3, dims = 9:10, reduction = "pca"))
+
+(DimHeatmap(hcp1, dims = 9:10, balanced = TRUE, cells = 500)) +
+(DimHeatmap(hcp2, dims = 9:10, balanced = TRUE, cells = 500)) +
+(DimHeatmap(hcp3, dims = 9:10, balanced = TRUE, cells = 500))
+
+# pca plots w/ dims 11:12
+(VizDimLoadings(hcp1, dims = 11:12, reduction = "pca")) +
+(VizDimLoadings(hcp2, dims = 11:12, reduction = "pca")) +
+(VizDimLoadings(hcp3, dims = 11:12, reduction = "pca"))
+
+(DimHeatmap(hcp1, dims = 11:12, balanced = TRUE, cells = 500)) +
+(DimHeatmap(hcp2, dims = 11:12, balanced = TRUE, cells = 500)) +
+(DimHeatmap(hcp3, dims = 11:12, balanced = TRUE, cells = 500))
+
+# pca plots w/ dims 13:14
+(VizDimLoadings(hcp1, dims = 13:14, reduction = "pca")) +
+(VizDimLoadings(hcp2, dims = 13:14, reduction = "pca")) +
+(VizDimLoadings(hcp3, dims = 13:14, reduction = "pca"))
+
+(DimHeatmap(hcp1, dims = 13:14, balanced = TRUE, cells = 500)) +
+(DimHeatmap(hcp2, dims = 13:14, balanced = TRUE, cells = 500)) +
+(DimHeatmap(hcp3, dims = 13:14, balanced = TRUE, cells = 500))
+
+# pca plots w/ dims 15:16
+(VizDimLoadings(hcp1, dims = 15:16, reduction = "pca")) +
+(VizDimLoadings(hcp2, dims = 15:16, reduction = "pca")) +
+(VizDimLoadings(hcp3, dims = 15:16, reduction = "pca"))
+
+(DimHeatmap(hcp1, dims = 15:16, balanced = TRUE, cells = 500)) +
+(DimHeatmap(hcp2, dims = 15:16, balanced = TRUE, cells = 500)) +
+(DimHeatmap(hcp3, dims = 15:16, balanced = TRUE, cells = 500))
+
+# pca plots w/ dims 17:18
+(VizDimLoadings(hcp1, dims = 17:18, reduction = "pca")) +
+(VizDimLoadings(hcp2, dims = 17:18, reduction = "pca")) +
+(VizDimLoadings(hcp3, dims = 17:18, reduction = "pca"))
+
+(DimHeatmap(hcp1, dims = 17:18, balanced = TRUE, cells = 500)) +
+(DimHeatmap(hcp2, dims = 17:18, balanced = TRUE, cells = 500)) +
+(DimHeatmap(hcp3, dims = 17:18, balanced = TRUE, cells = 500))
+
+# pca plots w/ dims 19:20
+(VizDimLoadings(hcp1, dims = 19:20, reduction = "pca")) +
+(VizDimLoadings(hcp2, dims = 19:20, reduction = "pca")) +
+(VizDimLoadings(hcp3, dims = 19:20, reduction = "pca"))
+
+(DimHeatmap(hcp1, dims = 19:20, balanced = TRUE, cells = 500)) +
+(DimHeatmap(hcp2, dims = 19:20, balanced = TRUE, cells = 500)) +
+(DimHeatmap(hcp3, dims = 19:20, balanced = TRUE, cells = 500))
+
+# umap 
+
+# experimenting with # of pc's, 500 variable features 
+hcp1 <- RunUMAP(hcp1, dims = 1:7)
+DimPlot(hcp1, reduction = "umap")
+hcp1 <- RunUMAP(hcp1, dims = 1:8)
+DimPlot(hcp1, reduction = "umap")
+hcp1 <- RunUMAP(hcp1, 1:9)
+DimPlot(hcp1, reduction = "umap")
+hcp1 <- RunUMAP(hcp1, 1:10)
+DimPlot(hcp1, reduction = "umap")
+
+# experimenting with # of pc's, 1000 variable features
+hcp2 <- RunUMAP(hcp2, dims = 1:10)
+DimPlot(hcp2, reduction = "umap")
+hcp2 <- RunUMAP(hcp2, dims = 1:13)
+DimPlot(hcp2, reduction = "umap")
+hcp2 <- RunUMAP(hcp2, 1:3)
+DimPlot(hcp2, reduction = "umap")
+hcp2 <- RunUMAP(hcp2, 1:20)
+DimPlot(hcp2, reduction = "umap")
+
+# experimenting with # of pc's, 2000 variable features
+hcp3 <- RunUMAP(hcp3, dims = 1:10)
+DimPlot(hcp3, reduction = "umap")
+hcp3 <- RunUMAP(hcp3, dims = 1:13)
+DimPlot(hcp3, reduction = "umap")
+hcp3 <- RunUMAP(hcp3, 1:3)
+DimPlot(hcp3, reduction = "umap")
+hcp3 <- RunUMAP(hcp3, 1:20)
+DimPlot(hcp3, reduction = "umap")
+
+# automatizing the umap with different dims 
 
 
 # ================= ankitha =================
