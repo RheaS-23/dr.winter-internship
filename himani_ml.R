@@ -15,6 +15,10 @@ IWD_2 <-FindVariableFeatures(IWD, selection.method = "vst", nfeatures = 1000)
 IWD_3<-FindVariableFeatures(IWD, selection.method = "vst", nfeatures = 2000)
 
 #creating the variable feature plot for each one
+IWD_1_10 = head(VariableFeatures(IWD_1), 10)
+IWD_2_10 = head(VariableFeatures(IWD_2), 10)
+IWD_3_10 = head(VariableFeatures(IWD_3), 10)
+
 LabelPoints(VariableFeaturePlot(IWD_1), points = head(VariableFeatures(IWD_1), 10), repel = TRUE, xnudge = 0, ynudge = 0)
 LabelPoints(VariableFeaturePlot(IWD_2), points = head(VariableFeatures(IWD_2), 10), repel = TRUE, xnudge = 0, ynudge = 0)
 LabelPoints(VariableFeaturePlot(IWD_3), points = head(VariableFeatures(IWD_3), 10), repel = TRUE, xnudge = 0, ynudge = 0)
@@ -368,10 +372,17 @@ clustered <- FindNeighbors(IWD_3, dims = 1:18, n.trees = 65)
 clustered <- FindClusters(clustered, resolution = 0.5)
 
 
-umap.and.dimplot <- function(object, dims) {
+dim.list <- list(1:17, 1:18, 1:19, 1:20)
+top10_list <- list(IWD_1_10, IWD_2_10, IWD_3_10)
+
+umap.and.plots <- function(object, dims, top10) {
   object <- RunUMAP(object, dims = dims)
-  plot <- DimPlot(object, reduction = "umap")
-  return(plot)
+  dim_plot <- DimPlot(object, reduction = "umap", ncol = 2)
+  feature_plot <- FeaturePlot(object, features = top10)
+  print(dim_plot)
+  print(feature_plot)
+  return(list(dim_plot, feature_plot))
 }
 
-mapply(FUN = umap.and.dimplot, dims = dim.list, MoreArgs = list(object = IWD_1), SIMPLIFY = FALSE)
+mapply(FUN = umap.and.plots, object = list(IWD_1), dims = dim.list, top10 = top10_list, SIMPLIFY = FALSE)
+
