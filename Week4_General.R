@@ -46,12 +46,10 @@ umap.and.plots <- function(object, dims, top10) {
   object <- RunUMAP(object, dims = dims)
   dim_plot <- DimPlot(object, reduction = "umap", ncol = 2)
   feature_plot <- FeaturePlot(object, features = top10)
-  print(dim_plot)
-  print(feature_plot)
-  return(list(dim_plot, feature_plot))
+  print(dim_plot + feature_plot)
 }
 
-mapply(FUN = umap.and.plots, object = list(HCD1), dims = dim.list, top10 = top10_list, SIMPLIFY = FALSE)
+mapply(FUN = umap.and.plots, object = list(HCD1), dims = dim.list, top10 = list(top10_1), SIMPLIFY = FALSE)
 
 
 
