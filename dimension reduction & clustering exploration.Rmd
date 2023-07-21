@@ -14,15 +14,40 @@ library(magrittr)
 # ================= rhea - healthy control proximal =================
 
 #loading in the object
-hcp <- readRDS(file = "~/2023 sir/single cell analysis/HCP1.rds")
+hcp <- readRDS(file = "~/2023 sir/single cell analysis/HCP_postQC.rds")
 
 # normalizing the data
 hcp <- NormalizeData(hcp)
 
 #finding different variable genes
+
+# 500 variable genes 
 hcp1 <- FindVariableFeatures(hcp, selection.method = "vst", nfeatures = 500)
+hcp1_top10 <- head(VariableFeatures(hcp1), 10)
+plot1 <- VariableFeaturePlot(hcp1)
+plot2 <- LabelPoints(plot = plot1, points = hcp1_top10, repel = TRUE)
+
+# 1000 variable genes 
 hcp2 <- FindVariableFeatures(hcp, selection.method = "vst", nfeatures = 1000)
+# gathering the top 10 
+top10 <- head(VariableFeatures(hcp2), 10)
+# creating the plots
+plot3 <- VariableFeaturePlot(hcp2)
+plot4 <- LabelPoints(plot = plot3, points = top10, repel = TRUE)
+
+
+# 2000 variable genes 
 hcp3 <- FindVariableFeatures(hcp, selection.method = "vst", nfeatures = 2000)
+# gathering top 10
+hcp3_top10 <- head(VariableFeatures(hcp3), 10)
+# creating plots
+plot5 <- VariableFeaturePlot(hcp3)
+plot6 <- LabelPoints(plot = plot5, points = hcp3_top10, repel = TRUE)
+
+# plotting the graphs 
+plot2 
+plot4
+plot6
 
 # feature plots
 VariableFeaturePlot(hcp1) + VariableFeaturePlot (hcp2) + VariableFeaturePlot(hcp3)
@@ -40,7 +65,18 @@ hcp3 <- RunPCA(hcp3, features = VariableFeatures(object = hcp3))
 # creating the elbow plots
 ElbowPlot(hcp1) + ElbowPlot(hcp2) + ElbowPlot(hcp3)
 
+# running umap 
+# experimenting with # of pc's 
+hcp1 <- RunUMAP(hcp1, dims = 1:10)
+DimPlot(hcp1, reduction = "umap")
+hcp1 <- RunUMAP(hcp1, dims = 1:13)
+DimPlot(hcp1, reduction = "umap")
+hcp1 <- RunUMAP(hcp1, 1:3)
+DimPlot(hcp1, reduction = "umap")
+hcp1 <- RunUMAP(hcp1, 1:20)
+DimPlot(hcp1, reduction = "umap")
 
+# experimenting with 
 
 # ================= ankitha =================
 
