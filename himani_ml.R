@@ -244,6 +244,7 @@ DimHeatmap(IWD_3, dims = 7:12, cells = 500, balanced = TRUE)
 DimHeatmap(IWD_3, dims = 13:18, cells = 500, balanced = TRUE)
 DimHeatmap(IWD_3, dims = 19:20, cells = 500, balanced = TRUE)
 
+
 #clustering ----------------------------------------------------------------------
 
 #pcs for each sample changing k.param
