@@ -9,6 +9,7 @@ library(shinythemes)
 # Load data --------------------------------------------------------------------
 
 training_merged_obj <- readRDS("~/Downloads/training_merged_obj.rds")
+
 input_genes <- list()
 
 # Clustering -------------------------------------------------------------------
@@ -86,7 +87,13 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                         "Validation" = "validation_"
                       ),
                       selected = "validation_"
-                    )
+                    ),
+                    # Model Visualization - Logistic Regression
+                    selectInput("data_logreg",
+                                label = "Choose a data set to test model (logistic regression)",
+                                choices = c("30% Held-out Data" = "test_set",
+                                            "Independent Samples" = "ind_set"),
+                                selected = "30% Held-Out Data")
                   ),
                   
                   mainPanel(
@@ -94,7 +101,8 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                       type = "tabs",
                       tabPanel("Data Summary", imageOutput("selected_plot"), plotOutput("gene_expression_group.by")
                                ,plotOutput("single_gene_expression"), textOutput("gene_summary")),
-                      tabPanel("ML Model Visualization", imageOutput("selected_visual"), imageOutput("selected_visual2"))
+                      tabPanel("ML Model Visualization", imageOutput("selected_visual"), imageOutput("selected_visual2")),
+                      tabPanel("ML Model LogReg", imageOutput(outputId = "logreg_ml_model"))
                     )
                   )
                 )
@@ -178,6 +186,18 @@ server <- function(input, output) {
   output$selected_visual2 <- renderImage({
     filename <- normalizePath(file.path('./images',
                                         paste(input$dataset,'bar.png', sep='')))
+    
+    # Return a list containing the filename
+    list(src = filename,
+         width = 450,
+         height = 275,
+         alt = "plot")
+  }, deleteFile = FALSE)
+  
+  # ML Model - LogReg
+  output$logreg_ml_model_ <- renderImage({
+    filename <- normalizePath(file.path('~/Documents/GitHub/dr.winter-internship/images',
+                                        paste(input$data_logreg,'_allcells.png', sep='')))
     
     # Return a list containing the filename
     list(src = filename,
