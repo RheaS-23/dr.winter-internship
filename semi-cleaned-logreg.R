@@ -1,3 +1,160 @@
+# Test sets/Saving Files
+# everything is basically the same in everything except for changing what you subset
+library(Seurat)
+library(dplyr)
+library(caret)
+
+# Load data
+training <- readRDS("/Users/ankithachalla/Desktop/RStudio/SingleCellProject/SingleCells/training_merged_obj.rds")
+
+load("/Users/ankithachalla/Desktop/RStudio/SingleCellProject/SingleCells/sc_eso_testSamples.RData")
+
+# Normalize individual samples testing data
+test_merged_obj <- NormalizeData(object = test_merged_obj, assay = "RNA")
+
+# Find differentially expressed genes within the epithelial cell subset
+markers <- FindMarkers(training, ident.1 = "Epithelial", only.pos = TRUE, min.pct = 0.1, logfc.threshold = 0.25)
+
+markers %>% 
+  top_n(n = 500, wt = avg_log2FC) -> top500
+
+## Epithelial - 70% Training Data -------------------------------------------
+# Subset Epithelial Cells
+training_epi <- subset(training, annotation.cluster == "Epithelial")
+
+# Getting sample and condition data as a data frame
+condition_data <- data.frame("condition"= training_epi@meta.data$condition, "sample" = training_epi@meta.data$orig.ident)
+
+# Remove repetitive rows to create keys matching samples to conditions
+condition_data <- condition_data %>% distinct()
+
+# Get pseudobulk values per sample
+training_pseudobulk <- AverageExpression(training_epi, group.by = "orig.ident", slot = "data", assay = "RNA")
+
+# Transpose -- genes are now columns
+training_pseudobulk <- training_pseudobulk$RNA %>% t() 
+
+# Convert into data frame 
+training_pseudobulk <- training_pseudobulk %>% as.data.frame()
+
+# Get aggregated expression of all genes across samples
+gene_sums <- training_pseudobulk %>% colSums()
+
+# Select genes with no expression across samples
+drop <- which(gene_sums == 0)
+
+# Remove genes with no expression in any sample from data set (lower memory requirement)
+training_pseudobulk <- training_pseudobulk %>% dplyr::select(-all_of(drop))
+
+# Add sample names as a column for binding condition data
+training_pseudobulk["sample"] <- rownames(training_pseudobulk)
+
+# Combine average expression data with condition data (into one data frame)
+# full_join will splice together two data sets based on matching values in the "sample" column
+training_pseudobulk <- full_join(training_pseudobulk, condition_data, by = "sample")
+
+# Get rid of the "sample" column so it doesn't mess with your regression model
+training_pseudobulk <- training_pseudobulk %>% dplyr::select(-sample)
+
+# Get row indexes to assign to training data set/test data set
+sample_indexes <- createDataPartition(y = training_pseudobulk$condition, p = 0.7)
+
+# Select training data and test data set by row indexes
+set.seed(47)
+training_set <- training_pseudobulk[sample_indexes$Resample1,]
+training_set$condition <- as.factor(training_set$condition)
+test_set <- training_pseudobulk[-sample_indexes$Resample1,]
+test_set$condition <- as.factor(test_set$condition)
+
+saveRDS(training_set, file = "/Users/ankithachalla/Desktop/RStudio/SingleCellProject/SingleCells/week5_train_set.rds")
+saveRDS(test_set, file = "/Users/ankithachalla/Desktop/RStudio/SingleCellProject/SingleCells/week5_test_set.rds")
+
+## All Cells - 30% Testing Data -------------------------------------
+# Getting sample and condition data as a data frame
+condition_data <- data.frame("condition" = training@meta.data$condition, "sample" = training@meta.data$orig.ident)
+
+# Remove repetitive rows to create keys matching samples to conditions
+condition_data <- condition_data %>% distinct()
+
+# Get pseudobulk values per sample
+training_pseudobulk <- AverageExpression(training, group.by = "orig.ident", slot = "data", assay = "RNA")
+
+# Transpose -- genes are now columns
+training_pseudobulk <- training_pseudobulk$RNA %>% t() 
+
+# Convert into data frame 
+training_pseudobulk <- training_pseudobulk %>% as.data.frame()
+
+# Select only top500 differential genes
+training_pseudobulk <- training_pseudobulk %>% dplyr::select(all_of(rownames(top500)))
+
+# Add sample names as a column for binding condition data
+training_pseudobulk["sample"] <- rownames(training_pseudobulk)
+
+# Combine average expression data with condition data (into one data frame)
+# full_join will splice together two data sets based on matching values in the "sample" column
+training_pseudobulk <- full_join(training_pseudobulk, condition_data, by = "sample")
+
+# Get rid of the "sample" column so it doesn't mess with your regression model
+training_pseudobulk <- training_pseudobulk %>% dplyr::select(-sample)
+
+# Get row indexes to assign to training data set/test data set
+sample_indexes <- createDataPartition(y = training_pseudobulk$condition, p = 0.7)
+
+# Select training data and test data set by row indexes
+set.seed(47)
+test_set <- training_pseudobulk[-sample_indexes$Resample1,]
+test_set$condition <- as.factor(test_set$condition)
+
+saveRDS(test_set, file = "/Users/ankithachalla/Desktop/RStudio/SingleCellProject/SingleCells/week5_test_all1.rds")
+
+## All Cells - Independent Samples -------------------------------------------
+
+# Getting sample and condition data as a data frame
+condition_data <- data.frame("condition" = test_merged_obj@meta.data$condition, "sample" = test_merged_obj@meta.data$orig.ident)
+
+# Remove repetitive rows to create keys matching samples to conditions
+condition_data <- condition_data %>% distinct()
+
+# Get pseudobulk values per sample
+training_pseudobulk <- AverageExpression(test_merged_obj, group.by = "orig.ident", slot = "data", assay = "RNA")
+
+# Transpose -- genes are now columns
+training_pseudobulk <- training_pseudobulk$RNA %>% t() 
+
+# Convert into data frame 
+training_pseudobulk <- training_pseudobulk %>% as.data.frame()
+
+# Select only top500 differential genes
+training_pseudobulk <- training_pseudobulk %>% dplyr::select(all_of(rownames(top500)))
+
+# Add sample names as a column for binding condition data
+training_pseudobulk["sample"] <- rownames(training_pseudobulk)
+
+# Combine average expression data with condition data (into one data frame)
+# full_join will splice together two data sets based on matching values in the "sample" column
+training_pseudobulk <- full_join(training_pseudobulk, condition_data, by = "sample")
+
+# Get rid of the "sample" column so it doesn't mess with your regression model
+training_pseudobulk <- training_pseudobulk %>% dplyr::select(-sample)
+
+training_pseudobulk$condition <- as.factor(training_pseudobulk$condition)
+
+saveRDS(training_pseudobulk, file = "/Users/ankithachalla/Desktop/RStudio/SingleCellProject/SingleCells/week6_test_all.rds")
+
+#----------------------------
+# Select only top500 differential genes
+training_set <- training_set %>% dplyr::select(all_of(rownames(top500)))
+
+saveRDS(training_set, file = "/Users/ankithachalla/Desktop/RStudio/SingleCellProject/SingleCells/week6_training.rds")
+
+
+
+
+
+
+# All the training stuff
+#--------------------------------------------------------------
 library(Seurat)
 library(dplyr)
 library(caret)
